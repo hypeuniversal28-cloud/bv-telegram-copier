@@ -1,7 +1,7 @@
 """
-Serveur d'authentification Telegram â interface web.
-Lance ce script, ouvre l'URL, entre le code SMS reÃ§u sur Telegram.
-Une fois authentifiÃ©, le bot dÃ©marre automatiquement.
+Serveur d'authentification Telegram — interface web.
+Lance ce script, ouvre l'URL, entre le code SMS reçu sur Telegram.
+Une fois authentifié, le bot démarre automatiquement.
 """
 import asyncio
 import os
@@ -23,7 +23,7 @@ from modules.logger import log
 
 app = FastAPI()
 
-# ââ Ãtat global âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ── État global ───────────────────────────────────────────────────────────
 _state = {
     "step": "idle",        # idle | code_sent | need_password | done | error
     "phone_hash": None,
@@ -38,7 +38,7 @@ HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BV Telegram Copier â Connexion</title>
+<title>BV Telegram Copier — Connexion</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -140,24 +140,24 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
 <div class="card">
-  <div class="logo">ð¡</div>
+  <div class="logo">📡</div>
   <h1>BV Telegram Copier</h1>
   <p class="subtitle">Connexion au compte Telegram</p>
 
-  <!-- Ãtape 1 : envoi du code -->
+  <!-- Étape 1 : envoi du code -->
   <div class="step active" id="step-send">
     <div class="info-box">
-      Le code de vÃ©rification sera envoyÃ© sur Telegram au numÃ©ro<br>
-      <strong id="phone-display">chargementâ¦</strong>
+      Le code de vérification sera envoyé sur Telegram au numéro<br>
+      <strong id="phone-display">chargement…</strong>
     </div>
     <div class="error-box" id="err-send"></div>
     <button id="btn-send" onclick="sendCode()">Envoyer le code</button>
   </div>
 
-  <!-- Ãtape 2 : saisie du code -->
+  <!-- Étape 2 : saisie du code -->
   <div class="step" id="step-code">
     <div class="info-box">
-      Entre le code reÃ§u sur ton application <strong>Telegram</strong>
+      Entre le code reçu sur ton application <strong>Telegram</strong>
       (format : 5 chiffres)
     </div>
     <div class="error-box" id="err-code"></div>
@@ -166,10 +166,10 @@ HTML = """<!DOCTYPE html>
     <button id="btn-verify" onclick="verifyCode()">Confirmer</button>
   </div>
 
-  <!-- Ãtape 3 : mot de passe 2FA -->
+  <!-- Étape 3 : mot de passe 2FA -->
   <div class="step" id="step-pwd">
     <div class="info-box">
-      Ton compte a la <strong>vÃ©rification en 2 Ã©tapes</strong> activÃ©e.<br>
+      Ton compte a la <strong>vérification en 2 étapes</strong> activée.<br>
       Entre ton mot de passe Telegram.
     </div>
     <div class="error-box" id="err-pwd"></div>
@@ -178,20 +178,19 @@ HTML = """<!DOCTYPE html>
     <button id="btn-pwd" onclick="sendPassword()">Confirmer</button>
   </div>
 
-  <!-- Ãtape finale : succÃ¨s -->
+  <!-- Étape finale : succès -->
   <div class="step" id="step-done">
     <div class="success-box">
-      <div class="icon">â</div>
-      <strong>ConnectÃ© en tant que <span id="account-name"></span></strong>
+      <div class="icon">✅</div>
+      <strong>Connecté en tant que <span id="account-name"></span></strong>
     </div>
-    <button onclick="window.location.href='/dashboard'">Ouvrir le dashboard â</button>
-    <p class="redirect-msg">Le bot est en cours de dÃ©marrageâ¦</p>
+    <p class="redirect-msg">✅ Bot actif — copie en cours…</p>
   </div>
 
-  <!-- Ãtape erreur critique -->
+  <!-- Étape erreur critique -->
   <div class="step" id="step-error">
     <div class="error-box" style="display:block" id="err-fatal"></div>
-    <button onclick="location.reload()">RÃ©essayer</button>
+    <button onclick="location.reload()">Réessayer</button>
   </div>
 </div>
 
@@ -211,17 +210,11 @@ function showStep(id) {
   document.getElementById(id).classList.add('active');
 }
 
-function setLoading(btnId, loading) {
-  const btn = document.getElementById(btnId);
-  btn.disabled = loading;
-  btn.innerHTML = loading ? '<span class="spinner"></span> Envoiâ¦' : btn.dataset.label;
-}
-
 async function sendCode() {
   const btn = document.getElementById('btn-send');
   btn.dataset.label = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Envoi du codeâ¦';
+  btn.innerHTML = '<span class="spinner"></span> Envoi du code…';
   const err = document.getElementById('err-send');
   err.style.display = 'none';
 
@@ -244,7 +237,7 @@ async function verifyCode() {
   if (!code) return;
   const btn = document.getElementById('btn-verify');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> VÃ©rificationâ¦';
+  btn.innerHTML = '<span class="spinner"></span> Vérification…';
   const err = document.getElementById('err-code');
   err.style.display = 'none';
 
@@ -273,7 +266,7 @@ async function sendPassword() {
   if (!pwd) return;
   const btn = document.getElementById('btn-pwd');
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> VÃ©rificationâ¦';
+  btn.innerHTML = '<span class="spinner"></span> Vérification…';
   const err = document.getElementById('err-pwd');
   err.style.display = 'none';
 
@@ -297,11 +290,14 @@ async function sendPassword() {
 function showDone(name) {
   document.getElementById('account-name').textContent = name || '';
   showStep('step-done');
-  // Lancer le bot cÃ´tÃ© serveur
-  fetch('/auth/start-bot', { method: 'POST' });
+  // Lancer le bot côté serveur (une seule fois)
+  if (!window._botStarted) {
+    window._botStarted = true;
+    fetch('/auth/start-bot', { method: 'POST' });
+  }
 }
 
-// Ãcouter Enter sur les inputs
+// Écouter Enter sur les inputs
 document.addEventListener('keydown', e => {
   if (e.key !== 'Enter') return;
   const step = document.querySelector('.step.active');
@@ -317,7 +313,7 @@ init();
 """
 
 
-# ââ Routes d'auth âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+# ── Routes d'auth ─────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
 async def index():
@@ -349,13 +345,17 @@ async def auth_send_code():
             _state["step"] = "done"
             _state["account_name"] = me.first_name
             _state["client"] = client
+            # Auto-start bot if already authorized
+            if not _state.get("bot_started"):
+                _state["bot_started"] = True
+                _do_start_bot()
             return {"ok": True, "already_auth": True, "account_name": me.first_name}
 
         result = await client.send_code_request(Config.PHONE)
         _state["phone_hash"] = result.phone_code_hash
         _state["client"] = client
         _state["step"] = "code_sent"
-        log.info(f"[AUTH] Code envoyÃ© au {Config.PHONE}")
+        log.info(f"[AUTH] Code envoyé au {Config.PHONE}")
         return {"ok": True}
 
     except Exception as e:
@@ -370,7 +370,7 @@ async def auth_verify_code(body: dict):
     code = body.get("code", "").strip()
     client: TelegramClient = _state.get("client")
     if not client or not _state.get("phone_hash"):
-        return {"ok": False, "error": "Session expirÃ©e, rafraÃ®chissez la page"}
+        return {"ok": False, "error": "Session expirée, rafraîchissez la page"}
 
     try:
         await client.sign_in(
@@ -381,14 +381,14 @@ async def auth_verify_code(body: dict):
         me = await client.get_me()
         _state["step"] = "done"
         _state["account_name"] = me.first_name
-        log.info(f"[AUTH] â AuthentifiÃ© : {me.first_name}")
+        log.info(f"[AUTH] ✅ Authentifié : {me.first_name}")
         return {"ok": True, "account_name": me.first_name}
 
     except SessionPasswordNeededError:
         _state["step"] = "need_password"
         return {"ok": False, "need_password": True}
     except Exception as e:
-        log.error(f"[AUTH] Erreur vÃ©rification code : {e}")
+        log.error(f"[AUTH] Erreur vérification code : {e}")
         return {"ok": False, "error": str(e)}
 
 
@@ -397,14 +397,14 @@ async def auth_verify_password(body: dict):
     password = body.get("password", "")
     client: TelegramClient = _state.get("client")
     if not client:
-        return {"ok": False, "error": "Session expirÃ©e"}
+        return {"ok": False, "error": "Session expirée"}
 
     try:
         await client.sign_in(password=password)
         me = await client.get_me()
         _state["step"] = "done"
         _state["account_name"] = me.first_name
-        log.info(f"[AUTH] â AuthentifiÃ© (2FA) : {me.first_name}")
+        log.info(f"[AUTH] ✅ Authentifié (2FA) : {me.first_name}")
         return {"ok": True, "account_name": me.first_name}
 
     except Exception as e:
@@ -412,30 +412,50 @@ async def auth_verify_password(body: dict):
         return {"ok": False, "error": str(e)}
 
 
-@app.post("/auth/start-bot")
-async def auth_start_bot():
-    """DÃ©connecte le client auth, puis lance main.py en arriÃ¨re-plan."""
+def _do_start_bot():
+    """Lance main.py en arrière-plan (mode NO_WEB_SERVER=1)."""
     client: TelegramClient = _state.get("client")
     if client:
-        await client.disconnect()
+        # Déconnecter le client auth en thread séparé (non-async)
+        import asyncio as _aio
+        try:
+            loop = _aio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(client.disconnect())
+        except Exception:
+            pass
         _state["client"] = None
 
     def _launch():
         import time
-        time.sleep(1)
-        subprocess.Popen(
+        time.sleep(2)
+        # Créer le dossier logs si absent
+        Path("logs").mkdir(exist_ok=True)
+        env = dict(os.environ)
+        env["NO_WEB_SERVER"] = "1"   # main.py ne démarre pas uvicorn
+        proc = subprocess.Popen(
             [sys.executable, "main.py"],
             cwd=str(Path(__file__).parent),
-            stdout=open("logs/bot.log", "a"),
-            stderr=subprocess.STDOUT,
+            env=env,
+            # Logs visibles dans Railway (héritage stdout/stderr)
         )
+        log.info(f"[AUTH] main.py démarré (PID {proc.pid})")
 
     threading.Thread(target=_launch, daemon=True).start()
-    log.info("[AUTH] Bot lancÃ© en arriÃ¨re-plan")
+    log.info("[AUTH] Bot lancé en arrière-plan")
+
+
+@app.post("/auth/start-bot")
+async def auth_start_bot():
+    """Déconnecte le client auth, puis lance main.py en arrière-plan."""
+    if _state.get("bot_started"):
+        return {"ok": True, "already_started": True}
+    _state["bot_started"] = True
+    _do_start_bot()
     return {"ok": True}
 
 
-# ââ Health check pour le tunnel âââââââââââââââââââââââââââââââââââââââââââ
+# ── Health check pour le tunnel ───────────────────────────────────────────
 
 @app.get("/api/state")
 async def api_state():
