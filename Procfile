@@ -1,0 +1,1 @@
+web: python3 auth_server.py
